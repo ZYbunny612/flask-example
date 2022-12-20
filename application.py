@@ -14,33 +14,33 @@ import json
 from datetime import datetime
 
 
-app=Flask(__name__)
-CORS(app)
+application=Flask(__name__)
+CORS(application)
 
-app.config['SECRET_KEY']='zy112612' # 密码
-app.config['SQLALCHEMY_DATABASE_URI']='mysql+pymysql://admin:zy112612@e6156-1.cudpmdtzmg9e.us-east-1.rds.amazonaws.com:3306/customer'
+application.config['SECRET_KEY']='zy112612' # 密码
+application.config['SQLALCHEMY_DATABASE_URI']='mysql+pymysql://admin:zy112612@e6156-1.cudpmdtzmg9e.us-east-1.rds.amazonaws.com:3306/customer'
     # 协议：mysql+pymysql
     # 用户名：root
     # 密码：2333
     # IP地址：localhost
     # 端口：3306
     # 数据库名：runoob #这里的数据库需要提前建好
-app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']=True
-db=SQLAlchemy(app)
+application.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']=True
+db=SQLAlchemy(application)
 
 #测试连上
-with app.app_context():
+with application.app_context():
     sql = 'select * from Customers'
     result = db.session.execute(sql).fetchall()
     
 
  
-@app.route('/', methods=['GET'], defaults={"page":1})
+@application.route('/', methods=['GET'], defaults={"page":1})
 def home():
     return 'Hello World!'
 
 
-@app.route('/page_search/<page>', methods=['GET'])
+@application.route('/page_search/<page>', methods=['GET'])
 def page_search(page):
     page=int(page)-1
     pages=5
@@ -67,7 +67,7 @@ def page_search(page):
 
 
 #{"username":"ywang", "password":"0002", "email": "wg@gmail.com", "address": "400w"}
-@app.route('/customer/register', methods=['GET', 'POST'])
+@application.route('/customer/register', methods=['GET', 'POST'])
 def register():
     response = ""
     if request.method == 'POST':
@@ -104,7 +104,7 @@ def register():
 #{email: string, username:string}
 #{state: True/False message: string, explain whether login is successful or not,}
 
-@app.route('/customer/googlelogin', methods=['GET', 'POST'])
+@application.route('/customer/googlelogin', methods=['GET', 'POST'])
 def google_login():
     
     if request.method == 'POST':
@@ -134,7 +134,7 @@ def google_login():
     return response
 
 
-@app.route('/customer/login', methods=['GET', 'POST'])
+@application.route('/customer/login', methods=['GET', 'POST'])
 def login():
     
     if request.method == 'POST':
@@ -165,7 +165,7 @@ def login():
         
     return response
 
-@app.route('/customer/modifyPassword', methods=['GET', 'POST'])
+@application.route('/customer/modifyPassword', methods=['GET', 'POST'])
 def customer_modify_password():
     if request.method == 'POST':
         data = json.loads(request.get_data())
@@ -200,7 +200,7 @@ def customer_modify_password():
         return msg
 
 #{"address":"aaaa", "email": "wang@gmail.com", "username":"yifan"}
-@app.route('/customer/modifyInfo', methods=['GET', 'POST'])
+@application.route('/customer/modifyInfo', methods=['GET', 'POST'])
 def customer_modify_information():
     if request.method == 'POST':
         data = json.loads(request.get_data())
@@ -224,7 +224,7 @@ def customer_modify_information():
 
         return msg
 
-@app.route("/customer/history", methods=['POST'])
+@application.route("/customer/history", methods=['POST'])
 def get_customer_history():
     rsp=""
     if request.method == 'POST':
@@ -243,7 +243,7 @@ def get_customer_history():
 
 #{email: string, timestamp: time,( current time), order:dictionary{merchandise id: amount}}
 # { "email":"wg@gmail.com", "timestamp":"2022-12-11 17:30:00" }
-@app.route("/customer/place_order", methods=['POST'])
+@application.route("/customer/place_order", methods=['POST'])
 def customer_place_order():
     response={}
     if request.method == 'POST':
@@ -276,7 +276,7 @@ def customer_place_order():
 
     return response
 
-@app.route("/people/<email>", methods=["GET"])
+@application.route("/people/<email>", methods=["GET"])
 def get_customer_by_email(email):
     
     sql = "select * from Customers where email = '" + email + "'"
@@ -299,7 +299,7 @@ def get_customer_by_email(email):
 
 if __name__=='__main__':
 
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    application.run(host='0.0.0.0', port=8080, debug=True)
 
 
 
