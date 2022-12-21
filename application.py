@@ -29,9 +29,13 @@ with application.app_context():
     
 
  
-@application.route('/', methods=['GET'], defaults={"page":1})
-def home():
-    return 'Hello World!'
+# @application.route('/', methods=['GET'], defaults={"page":1})
+# def home():
+#     return 'Hello World!'
+
+@application.route('/')
+def hello_world():
+    return 'Hello there good sir.'
 
 
 @application.route('/page_search/<page>', methods=['GET'])
