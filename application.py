@@ -18,18 +18,18 @@ application=Flask(__name__)
 CORS(application)
 
 application.config['SECRET_KEY']='zy112612'
-application.config['SQLALCHEMY_DATABASE_URI']='mysql+pymysql://admin:zy112612@e6156-1.cudpmdtzmg9e.us-east-1.rds.amazonaws.com:3306/customer'
+application.config['SQLALCHEMY_DATABASE_URI']='mysql+pymysql://admin:zy112612@e6156-1.cudpmdtzmg9e.us-east-1.rds.amazonaws.com:3306/Purchase'
 application.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']=True
 db=SQLAlchemy(application)
 
 
 with application.app_context():
-    sql = 'select * from Customers'
-    result = db.session.execute(sql).fetchall()
-    
+    sql = 'select * from Contains'
+    result = db.session.execute(sql)
+    print(result.fetchall())
 
- 
-# @application.route('/', methods=['GET'], defaults={"page":1})
+
+# @application.route('/', methods=['GET'])
 # def home():
 #     return 'Hello World!'
 
@@ -37,264 +37,121 @@ with application.app_context():
 def hello_world():
     return 'Hello there good sir.'
 
-
-@application.route('/page_search/<page>', methods=['GET'])
-def page_search(page):
-    page=int(page)-1
-    pages=5
-    sql = 'select * from Customers'
-    result = db.session.execute(sql).fetchall()
-    max_page=round(len(result)/pages)+1
-    # print(max_page)
-    if page < max_page:
+# {"oid":"1"}
+@application.route('/customer/order_details', methods=['POST'])
+def order_detail():
+    if request.method == 'POST':
+        data = json.loads(request.get_data())
+        oid = data['oid']
+        print(oid)
         try:
-            sql = "select * from Customers LIMIT {} OFFSET {} ".format(pages, page*5)
+            sql = "SELECT c.mid, m.name, c.numbers FROM Merchandises m, Contains c WHERE c.oid = '{}' AND c.mid = m.mid".format(oid)
             result = db.session.execute(sql).fetchall()
         except Exception as err:
             return {"state": False, "message": "error! input error"}
         json_list=[]
+        
         for row in result:
-            json_list.append([x for x in row])  
-        return json_list
-    else: 
-        return {"state": False, "message": "error! do not have data"}
-        
-    
-    
-
-
-
-#{"username":"ywang", "password":"0002", "email": "wg@gmail.com", "address": "400w"}
-@application.route('/customer/register', methods=['GET', 'POST'])
-def register():
-    response = ""
-    if request.method == 'POST':
-        data = json.loads(request.get_data())
-
-        username = data['username']
-        password = data['password']
-        email = data['email']
-        address = data['address']
-        print(email)
-        try:
-            sql = "SELECT COUNT('{}') FROM Customers where email = '{}' ".format(email, email)
-            result = db.session.execute(sql).fetchall()[0][0]
-        except Exception as err:
-            return {"state": False, "message": "error! input error"}
-        
-        print(result)
-        if result > 0:
-            response = {"state": False,"message": "error! email is used"}
-        else:
-            try:
-                sql= "INSERT INTO Customers VALUES ('{}', '{}', '{}', '{}');".format(email,username, password, address)
-                db.session.execute(sql)
-            except Exception as err:
-                return {"state": False,"message": "error! input error"}
-            sql = 'select * from Customers'
-            result = db.session.execute(sql)
-            print(result.fetchall())
+            # print("new row")
+            answer={}
+            answer["mid"]= row[0]
+            answer["name"]= row[1]
+            answer["amount"]= row[2]
+            json_list.append(answer)
             
-            response = {"state": True,"message": "register successfully"}
-       
-    return response
+            # print(len(row))
+            # json_list.append([x for x in row]) 
 
-#{email: string, username:string}
-#{state: True/False message: string, explain whether login is successful or not,}
-
-@application.route('/customer/googlelogin', methods=['GET', 'POST'])
-def google_login():
-    
-    if request.method == 'POST':
-        data = json.loads(request.get_data())
-        username = data['username']
-        email = data['email']
-        
-        try:
-            sql = "SELECT * FROM Customers where email = '{}' ".format(email)
-            result = db.session.execute(sql).fetchone()
-        except Exception as err:
-            return {"state": False, "message": "error! input error"}
-        
-        if result :
-            print("successfully")
-            response= {"state": True, "message":"login successfully"}
-            
-        else:
-            try:
-                sql= "INSERT INTO Customers VALUES ('{}', '{}', null, null);".format(email,username)
-                db.session.execute(sql)
-            except Exception as err:
-                return {"state": False,"message": "error! input error"}
-
-            response= {"state": True, "message": "register and login successfully"}
-        
-    return response
-
-
-@application.route('/customer/login', methods=['GET', 'POST'])
-def login():
-    
-    if request.method == 'POST':
-        data = json.loads(request.get_data())
-        password = data['password']
-        email = data['email']
-        
-        try:
-            sql = "SELECT * FROM Customers where email = '{}' ".format(email)
-            result = db.session.execute(sql).fetchone()
-        except Exception as err:
-            return {"state": False, "message": "error! input error"}
-        
-        if result :
-            stored_username= result[1]
-            stored_password= result[2]
-            stored_address= result[3]
-            print(stored_username)
-            if stored_password == password:
-                print("successfully")
-                response= {"state": True, "message":"login successfully", "username": stored_username, "address": stored_address}
-            else:
-                print("unmatch")
-                response= {"state": False,"message":"password unmatch"}
-        else:
-            print("please register")
-            response= {"state": False, "message": "you need to register firstly"}
-        
-    return response
-
-@application.route('/customer/modifyPassword', methods=['GET', 'POST'])
-def customer_modify_password():
-    if request.method == 'POST':
-        data = json.loads(request.get_data())
-        email = data['email']
-        oldpwd = data['currPw']
-        newpwd = data['modifiedPw']
-
-        try:
-            sql = "SELECT * FROM Customers where Email = '{}' AND Pwd = '{}'".format(email, oldpwd)
-            result = db.session.execute(sql).fetchone()
-        except Exception as err:
-            return {"message": "error! change password error","state":False}
-
-        if result :
-            stored_password= result[2]
-            print(stored_password)
-            try: 
-                sql = "UPDATE Customers SET Pwd = '{}' where Email = '{}'".format(newpwd, email)
-                db.session.execute(sql)
-            except Exception as err:
-                return {"message": "error! change password error","state":False}
-            try:
-                sql = 'select * from Customers'
-                result = db.session.execute(sql)
-                print(result.fetchall())
-            except Exception as err:
-                return {"state":False,"message": "error! change password error"}
-            msg = {"message":"password modified successfully","state":True}
-        else:
-            msg = {"state":False,"message":"old password unmatch"}
-
-        return msg
-
-#{"address":"aaaa", "email": "wang@gmail.com", "username":"yifan"}
-@application.route('/customer/modifyInfo', methods=['GET', 'POST'])
-def customer_modify_information():
-    if request.method == 'POST':
-        data = json.loads(request.get_data())
-        email = data['email']
-        username = data['username']
-        address = data['address']
-        
-        try: 
-            sql = "UPDATE Customers SET Name = '{}', address = '{}'  where Email = '{}'".format(username, address, email)
-            db.session.execute(sql)
-        except Exception as err:
-            return {"message": "error! change information error","state":False}
-        
-        try:
-            sql = 'select * from Customers'
-            result = db.session.execute(sql)
-        except Exception as err:
-            return {"message": "error! change information error","state":False}
-        
-        msg = {"state":True,"message":"information modified successfully"}
-
-        return msg
-
-@application.route("/customer/history", methods=['POST'])
-def get_customer_history():
-    rsp=""
-    if request.method == 'POST':
-        data = json.loads(request.get_data())
-        email = data['email']
-        sql = "SELECT o.OID, o.Time, o.Status FROM Places p, Orders o WHERE p.Email = '{}' AND p.OID = o.OID".format(email)
-        result = db.session.execute(sql).fetchall()
-        json_list=[]
-        for row in result:
-            json_list.append([x for x in row])       
-
-    return json_list
+    return {"data": json_list}
 
 
 
-
-#{email: string, timestamp: time,( current time), order:dictionary{merchandise id: amount}}
-# { "email":"wg@gmail.com", "timestamp":"2022-12-11 17:30:00" }
-@application.route("/customer/place_order", methods=['POST'])
-def customer_place_order():
+@application.route('/order/add_merchandise', methods=['POST'])
+def delete_merchandise():
     response={}
     if request.method == 'POST':
         data = json.loads(request.get_data())
-        email = data['email']
-        time= data['timestamp']
-        try: 
-            sql='SELECT Max(oid) FROM Orders'
-            max_oid = db.session.execute(sql).fetchone()
-        except Exception as err:
-            return {"message": "error! change information error","state":False}
-        oid=max_oid[0]+1
-        print(oid)
+        
+        mid= data["mid"]
+        name= data["name"]
+        print ("mid")
+        print(mid)
+        print("name")
+        print (name)
+        
         try:
-            sql="INSERT INTO Orders VALUES ('{}', '{}')".format(oid,time)
+            sql="INSERT INTO Merchandises VALUES ('{}','{}')".format(mid,name)
             db.session.execute(sql)
+            
         except Exception as err:
             print("order")
-            return {"message": "error! change information error","state":False}
+            return {"message": "error! change information error","state":False}  
+        response["message"]= True
+        response['state']= True
+    return response
 
+#<actually need mid, name>
+@application.route('/order/update_merchandise', methods=['POST'])
+def update_merchandise():
+    response={}
+    if request.method == 'POST':
+        data = json.loads(request.get_data())
+        
+        mid= data["mid"]
+        name= data["name"]
+        
         try:
-            sql="INSERT INTO Places VALUES ('{}', '{}')".format(email, oid)
+            sql="UPDATE Merchandises SET Name = '{}' WHERE mid = '{}'".format(name, mid)
             db.session.execute(sql)
+            
         except Exception as err:
-            print("places")
-            return {"message": "error! change information error","state":False}
+            print("order")
+            return {"message": "error! change information error","state":False}  
 
         response["message"]= True
         response['state']= True
 
     return response
 
-@application.route("/people/<email>", methods=["GET"])
-def get_customer_by_email(email):
-    
-    sql = "select * from Customers where email = '" + email + "'"
-    result = db.session.execute(sql).fetchone()
+@application.route('/order/place_order', methods=['POST'])
+def place_order():
+# {email: string
+# timestamp: time, (current time)
+# order: dictionary{mid: numbers}
+# oid: comes from customer/place_order}
 
-    if result:
-        data_email=result[0]
-        name=result[1]
-        password= result[2]
-        address= result[3]
-        list=[data_email, name, password, address]
-        
-        rsp = Response(json.dumps(list), status=200, content_type="application/json")
-        
-    else:
-        rsp = Response("NOT FOUND", status=404, content_type="text/plain")
+    response={}
+    if request.method == 'POST':
+        data = json.loads(request.get_data())
+        email= data['email']
+        timestamp= data["timestamp"]
+        items= data['items']
+        oid= data['oid']
+        print(oid)
+#       insert into Orders values (‘{}’) placeholder is oid
+        try:
+            sql="INSERT INTO Orders VALUES ('{}')".format(oid)
+            db.session.execute(sql)
+        except Exception as err:
+            print("order")
+            return {"message": "error! change information error","state":False}
 
-    return rsp
-    
+#         for each (mid,numbers) in dictionary:
+#   insert into Contains values (‘{}’, ‘{}’, ‘{}’)
+# placeholder: oid, mid, numbers
+        for i in range(len(items)):
+            
+            try:
+                sql="INSERT INTO Contains VALUES ('{}', '{}', '{}')".format(oid, items[i]['mid'], items[i]['amount'])
+                db.session.execute(sql)
+            except Exception as err:
+                print("contains")
+                return {"message": "error! change information error","state":False}
+           
+        response["message"]= True
+        response['state']= True
+    return response
+        
 
 if __name__=='__main__':
-
-    application.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
