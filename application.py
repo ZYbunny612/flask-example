@@ -17,18 +17,12 @@ from datetime import datetime
 application=Flask(__name__)
 CORS(application)
 
-application.config['SECRET_KEY']='zy112612' # 密码
+application.config['SECRET_KEY']='zy112612'
 application.config['SQLALCHEMY_DATABASE_URI']='mysql+pymysql://admin:zy112612@e6156-1.cudpmdtzmg9e.us-east-1.rds.amazonaws.com:3306/customer'
-    # 协议：mysql+pymysql
-    # 用户名：root
-    # 密码：2333
-    # IP地址：localhost
-    # 端口：3306
-    # 数据库名：runoob #这里的数据库需要提前建好
 application.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']=True
 db=SQLAlchemy(application)
 
-#测试连上
+
 with application.app_context():
     sql = 'select * from Customers'
     result = db.session.execute(sql).fetchall()
@@ -300,6 +294,3 @@ def get_customer_by_email(email):
 if __name__=='__main__':
 
     application.run(host='0.0.0.0', port=8000, debug=True)
-
-
-
